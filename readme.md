@@ -61,11 +61,11 @@ Say that you want to turn on GPS; on the SIM7000, that is controlled by sending 
 command `AT+CGNSPWR=1`; you can send that command by running:
 
 ```c++
-lte.asyncExecute("AT+CGNSWPR=1")
+lte.execute("AT+CGNSWPR=1")
 ```
 
 But what if you wanted to make sure it was successful?  Looking at the docs,
-this can return either "OK" or "ERROR".  To help out with that, `asyncExecute` accepts
+this can return either "OK" or "ERROR".  To help out with that, `execute` accepts
 a few more optional parameters:
 
 * **Command** (`char*`): The command to send; above: `AT+CGNSPWR=1`.
@@ -89,7 +89,7 @@ GPS coordinates, you can write this call:
 float latitude = 0;
 float longitude = 0;
 
-lte.asyncExecute(
+lte.execute(
     "AT+CGNSWPR=1",
     "OK",
     [&lte,&latitude,&longitude](MatchState ms) {

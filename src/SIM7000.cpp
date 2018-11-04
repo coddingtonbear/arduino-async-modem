@@ -28,7 +28,7 @@ bool AsyncModem::SIM7000::begin(
                 beginATAttemptCount++;
                 if(beginATAttemptCount < ATAttempts) {
                     cmd->delay = 1000;
-                    asyncExecute(cmd);
+                    execute(cmd);
                 } else {
                     emitErrorMessage("Failed to connect to modem!");
                     if(failure) {
@@ -58,7 +58,7 @@ bool AsyncModem::SIM7000::begin(
     };
     uint8_t commandCount = ASYNC_MODEM_COUNT_OF(commands);
 
-    return asyncExecuteChain(
+    return executeChain(
         commands,
         commandCount,
         Timing::ANY,
@@ -133,7 +133,7 @@ bool AsyncModem::SIM7000::enableGPRS(
     };
     uint8_t commandCount = ASYNC_MODEM_COUNT_OF(commands);
 
-    return asyncExecuteChain(
+    return executeChain(
         commands,
         commandCount,
         Timing::ANY,
@@ -148,7 +148,7 @@ bool AsyncModem::SIM7000::getNetworkStatus(
     std::function<void(Command*)> failure
 ) {
     *status = NETWORK_STATUS::NOT_YET_READY;
-    return asyncExecute(
+    return execute(
         "AT+CREG?",
         "%+CREG: [%d]+,([%d]+).*\n",
         Timing::ANY,
@@ -205,7 +205,7 @@ bool AsyncModem::SIM7000::getRSSI(
     //  31: -52 dBm or greater
     //  99: not known or not detectable
     *rssi = -1;
-    return asyncExecute(
+    return execute(
         "AT+CSQ",
         "%+CSQ: ([%d]+),[%d]+.*\n",
         Timing::ANY,
@@ -236,14 +236,14 @@ bool AsyncModem::SIM7000::sendSMS(
     String msisdn = _msisdn;
     String message = _message;
 
-    return asyncExecute(
+    return execute(
         "AT+CMGF=1",
         "OK",
         AsyncDuplex::Timing::ANY,
         [this,success,failure,msisdn,message](MatchState ms) {
             char atCmgs[30];
             sprintf(atCmgs, "AT+CMGS=\"%s\"", msisdn.c_str());
-            asyncExecute(
+            execute(
                 atCmgs,
                 ">",
                 AsyncDuplex::Timing::NEXT,
