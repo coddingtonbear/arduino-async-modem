@@ -247,24 +247,14 @@ bool AsyncModem::SIM7000::sendSMS(
                 atCmgs,
                 ">",
                 AsyncDuplex::Timing::NEXT,
-                [this,success,failure,message](MatchState ms) {
-                    char messageBuffer[message.length() + 2];
-                    sprintf(messageBuffer, "%s\x1a", message.c_str());
-                    asyncExecute(
-                        messageBuffer,
-                        "OK",
-                        AsyncDuplex::Timing::NEXT,
-                        [success](MatchState ms) {
-                            if(success) {
-                                success(ms);
-                            }
-                        },
-                        [failure](Command* cmd) {
-                            if(failure) {
-                                failure(cmd);
-                            }
-                        }
-                    );
+                [this,success,message](MatchState ms) {
+                    for (uint16_t i = 0; i < message.length(); i++) {
+                        AsyncModem::SIM7000::write(message.c_str()[i]);
+                    }
+                    AsyncModem::SIM7000::write(0x1a);
+                    if(success) {
+                        success(ms);
+                    }
                 },
                 [failure](Command* cmd) {
                     if(failure) {
