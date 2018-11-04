@@ -1,4 +1,4 @@
-# (Experimental) Arduino-Async-Modem
+# Arduino-Async-Modem
 
 If you've ever used one of the many modem-handling libraries that exist, you're familiar with the frustration that is waiting for a response from a long-running command. Between sending your command and receiving a response (or worse -- that command timing out), your program is halted, and your microcontroller is wasiting valuable cycles. This library aims to fix that problem by allowing you to queue commands that will be asynchronously sent to your device without blocking your microcontroller loop.
 
