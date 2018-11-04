@@ -44,12 +44,7 @@ bool AsyncModem::SIM7000::begin(
         Command(
             "ATI",
             "SIM7000.*\r\nOK\r\n",
-            [this, success](MatchState ms){
-                modemInitialized = true;
-                if(success) {
-                    success(ms);
-                }
-            },
+            NULL,
             [this](Command* command) {
                 emitErrorMessage(
                     "Warning: this does not appear to be a SIM7000 device!"
@@ -61,9 +56,41 @@ bool AsyncModem::SIM7000::begin(
                     command->success(empty);
                 }
             }
+        ),
+        Command(
+            "AT+CLTS=1",
+            "OK",
+            [this, success](MatchState ms){
+                modemInitialized = true;
+                if(success) {
+                    success(ms);
+                }
+            }
         )
     };
     uint8_t commandCount = ASYNC_MODEM_COUNT_OF(commands);
+
+    // Capture network time announcements so we can set the clock
+    registerHook(
+        // *PSUTTZ: 18/11/04,22:38:07","-32",0
+        "%*PSUTTZ: ([%d]+/[%d]+/[%d]+,[%d]+:[%d]+:[%d]+).*\"([+-][%d]+)\"",
+        [this](MatchState ms) {
+            char cclk[64];
+            char datetime[32];
+            char zone[8];
+
+            ms.GetCapture(datetime, 0);
+            ms.GetCapture(zone, 1);
+            sprintf(cclk, "AT+CCLK=\"%s%s\"", datetime, zone);
+
+            stripMatchFromInputBuffer(ms);
+
+            execute(
+                cclk,
+                "OK"
+            );
+        }
+    );
 
     return executeChain(
         commands,
