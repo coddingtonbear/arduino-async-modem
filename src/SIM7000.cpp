@@ -43,15 +43,22 @@ bool AsyncModem::SIM7000::begin(
         ),
         Command(
             "ATI",
-            "SIM7000.*\r\nOK\r\n"
-        ),
-        Command(
-            "AT+CPMS=\"SM\",\"SM\",\"SM\"",
-            "%+CPMS:.*\n",
+            "SIM7000.*\r\nOK\r\n",
             [this, success](MatchState ms){
                 modemInitialized = true;
                 if(success) {
                     success(ms);
+                }
+            },
+            [this](Command* command) {
+                emitErrorMessage(
+                    "Warning: this does not appear to be a SIM7000 device!"
+                );
+
+                // Execute further members of the chain anyway
+                if(command->success) {
+                    MatchState empty;
+                    command->success(empty);
                 }
             }
         )
@@ -61,7 +68,6 @@ bool AsyncModem::SIM7000::begin(
     return executeChain(
         commands,
         commandCount,
-        Timing::ANY,
         NULL,
         failure
     );
@@ -136,7 +142,6 @@ bool AsyncModem::SIM7000::enableGPRS(
     return executeChain(
         commands,
         commandCount,
-        Timing::ANY,
         NULL,
         failure
      );
@@ -151,7 +156,6 @@ bool AsyncModem::SIM7000::getNetworkStatus(
     return execute(
         "AT+CREG?",
         "%+CREG: [%d]+,([%d]+).*\n",
-        Timing::ANY,
         [&status, success](MatchState ms) {
             if(status) {
                 char stateBuffer[3];
@@ -208,7 +212,6 @@ bool AsyncModem::SIM7000::getRSSI(
     return execute(
         "AT+CSQ",
         "%+CSQ: ([%d]+),[%d]+.*\n",
-        Timing::ANY,
         [&rssi,success](MatchState ms) {
             if(rssi) {
                 char stateBuffer[3];
@@ -239,7 +242,6 @@ bool AsyncModem::SIM7000::sendSMS(
     return execute(
         "AT+CMGF=1",
         "OK",
-        AsyncDuplex::Timing::ANY,
         [this,success,failure,msisdn,message](MatchState ms) {
             char atCmgs[30];
             sprintf(atCmgs, "AT+CMGS=\"%s\"", msisdn.c_str());
