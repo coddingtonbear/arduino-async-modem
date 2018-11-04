@@ -70,10 +70,6 @@ a few more optional parameters:
 
 * **Command** (`char*`): The command to send; above: `AT+CGNSPWR=1`.
 * Expectation Regex (`char*`; default: `""`): What you hope to see -- in this case: `OK`.
-* Timing (`AsyncDuplex::Timing`; default: `AsycnDuplex::Timing::ANY`): One of
-  `AsyncDuplex::Timing::ANY` or `AsyncDuplex::Timing::NEXT` (if you want to ensure
-  that this command is executed at the next possible opportunity).  YOu will generally
-  want to use the default.
 * Success (`std::function<void(MatchState)>`; default: `NULL`): A function to execute
   once the output matches your expectation regex.  Note that the passed-in `MatchState`
   instance can be used for extracting data from capture groups that you might have
@@ -96,12 +92,10 @@ float longitude = 0;
 lte.asyncExecute(
     "AT+CGNSWPR=1",
     "OK",
-    AsyncDuplex::Timing::ANY,
     [&lte,&latitude,&longitude](MatchState ms) {
         lte.AsyncExecute(
             "AT+CGNSINF",
             "%+CGNSINF:[%d]+,[%d]+,[%d]+,([%d.%+%-]+),([%d.%+%-]+),.*",
-            AsyncDuplex::Timing::ANY,
             [](MatchState ms) {
                 char latitudeBuffer[12];
                 char longitudeBuffer[12];
