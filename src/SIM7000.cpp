@@ -59,8 +59,16 @@ bool AsyncModem::SIM7000::begin(
         ),
         Command(
             "AT+CLTS=1",
-            "OK",
-            [this, success](MatchState ms){
+            "OK"
+        ),
+        Command(
+            "AT+CREG?",
+            "%+CREG: [%d]+,([%d]+),",
+            [this, success](MatchState ms) {
+                char result[32];
+                ms.GetCapture(result, 0);
+                networkStatus = getNetworkStatusForInt(atoi(result));
+
                 modemInitialized = true;
                 if(success) {
                     success(ms);
@@ -89,6 +97,16 @@ bool AsyncModem::SIM7000::begin(
                 cclk,
                 "OK"
             );
+        }
+    );
+
+    // Capture network status so we can return it when requested
+    registerHook(
+        "%+CREG: ([%d]+),",
+        [this](MatchState ms) {
+            char result[32];
+            ms.GetCapture(result, 0);
+            networkStatus = getNetworkStatusForInt(atoi(result));
         }
     );
 
@@ -174,54 +192,8 @@ bool AsyncModem::SIM7000::enableGPRS(
      );
 }
 
-bool AsyncModem::SIM7000::getNetworkStatus(
-    NETWORK_STATUS* status,
-    std::function<void(MatchState)> success,
-    std::function<void(Command*)> failure
-) {
-    *status = NETWORK_STATUS::NOT_YET_READY;
-    return execute(
-        "AT+CREG?",
-        "%+CREG: [%d]+,([%d]+).*\n",
-        [&status, success](MatchState ms) {
-            if(status) {
-                char stateBuffer[3];
-                ms.GetCapture(stateBuffer, 0);
-                uint8_t value = atoi(stateBuffer);
-                switch(value) {
-                    case 0:
-                        *status = NETWORK_STATUS::NOT_REGISTERED;
-                        break;
-                    case 1:
-                        *status = NETWORK_STATUS::REGISTERED_HOME;
-                        break;
-                    case 2:
-                        *status = NETWORK_STATUS::SEARCHING;
-                        break;
-                    case 3:
-                        *status = NETWORK_STATUS::REGISTRATION_DENIED;
-                        break;
-                    case 4:
-                        *status = NETWORK_STATUS::UNKNOWN;
-                        break;
-                    case 5:
-                        *status = NETWORK_STATUS::REGISTERED_ROAMING;
-                        break;
-                    default:
-                        *status = NETWORK_STATUS::UNEXPECTED_RESULT;
-                        break;
-                }
-            }
-            if(success) {
-                success(ms);
-            }
-        },
-        [failure](Command* cmd) {
-            if(failure) {
-                failure(cmd);
-            }
-        }
-    );
+AsyncModem::SIM7000::NETWORK_STATUS AsyncModem::SIM7000::getNetworkStatus() {
+    return networkStatus;
 }
 
 bool AsyncModem::SIM7000::getRSSI(
@@ -298,6 +270,25 @@ bool AsyncModem::SIM7000::sendSMS(
             }
         }
     );
+}
+
+AsyncModem::SIM7000::NETWORK_STATUS AsyncModem::SIM7000::getNetworkStatusForInt(uint8_t value) {
+    switch(value) {
+        case 0:
+            return NETWORK_STATUS::NOT_REGISTERED;
+        case 1:
+            return NETWORK_STATUS::REGISTERED_HOME;
+        case 2:
+            return NETWORK_STATUS::SEARCHING;
+        case 3:
+            return NETWORK_STATUS::REGISTRATION_DENIED;
+        case 4:
+            return NETWORK_STATUS::UNKNOWN;
+        case 5:
+            return NETWORK_STATUS::REGISTERED_ROAMING;
+        default:
+            return NETWORK_STATUS::UNEXPECTED_RESULT;
+    }
 }
 
 bool AsyncModem::SIM7000::modemIsInitialized(){

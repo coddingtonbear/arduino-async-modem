@@ -39,17 +39,6 @@ namespace AsyncModem {
                 std::function<void(MatchState)> success=NULL,
                 std::function<void(Command*)> failure=NULL
             );
-
-            bool getNetworkStatus(
-                NETWORK_STATUS* status=NULL,
-                std::function<void(MatchState)> success=NULL,
-                std::function<void(Command*)> failure=NULL
-            );
-            bool getRSSI(
-                int8_t* rssi=NULL,
-                std::function<void(MatchState)> success=NULL,
-                std::function<void(Command*)> failure=NULL
-            );
             bool sendSMS(
                 char* msisdn,
                 char* message,
@@ -57,10 +46,22 @@ namespace AsyncModem {
                 std::function<void(Command*)> failure=NULL
             );
 
+            bool getRSSI(
+                int8_t* rssi=NULL,
+                std::function<void(MatchState)> success=NULL,
+                std::function<void(Command*)> failure=NULL
+            );
+
+            NETWORK_STATUS getNetworkStatus();
+
             bool modemIsInitialized();
             bool gprsIsEnabled();
         protected:
             bool modemInitialized = false;
             bool gprsEnabled = false;
+
+            NETWORK_STATUS getNetworkStatusForInt(uint8_t);
+
+            NETWORK_STATUS networkStatus = NOT_YET_READY;
     };
 };
