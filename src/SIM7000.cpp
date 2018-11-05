@@ -12,10 +12,13 @@ bool AsyncModem::SIM7000::begin(
     Stream* _stream,
     Stream* _errorStream,
     uint8_t ATAttempts,
+    bool _autoRefresh,
     std::function<void(MatchState)> success,
     std::function<void(Command*)> failure
 ) {
     AsyncDuplex::begin(_stream, _errorStream);
+    autoRefresh = _autoRefresh;
+    nextAutoRefresh = millis() + AUTOREFRESH_INTERVAL;
 
     Command commands[] = {
         Command(
@@ -59,16 +62,8 @@ bool AsyncModem::SIM7000::begin(
         ),
         Command(
             "AT+CLTS=1",
-            "OK"
-        ),
-        Command(
-            "AT+CREG?",
-            "%+CREG: [%d]+,([%d]+),",
+            "OK",
             [this, success](MatchState ms) {
-                char result[32];
-                ms.GetCapture(result, 0);
-                networkStatus = getNetworkStatusForInt(atoi(result));
-
                 modemInitialized = true;
                 if(success) {
                     success(ms);
@@ -100,22 +95,30 @@ bool AsyncModem::SIM7000::begin(
         }
     );
 
-    // Capture network status so we can return it when requested
-    registerHook(
-        "%+CREG: ([%d]+),",
-        [this](MatchState ms) {
-            char result[32];
-            ms.GetCapture(result, 0);
-            networkStatus = getNetworkStatusForInt(atoi(result));
-        }
-    );
-
     return executeChain(
         commands,
         commandCount,
         NULL,
         failure
     );
+}
+
+void AsyncModem::SIM7000::loop() {
+    AsyncDuplex::loop();
+    if(autoRefresh && millis() > nextAutoRefresh) {
+        nextAutoRefresh = millis() + AUTOREFRESH_INTERVAL;
+
+        // Refresh network status
+        execute(
+            "AT+CREG?",
+            "%+CREG: [%d]+,([%d]+)",
+            [this](MatchState ms) {
+                char result[32];
+                ms.GetCapture(result, 0);
+                networkStatus = getNetworkStatusForInt(atoi(result));
+            }
+        );
+    }
 }
 
 bool AsyncModem::SIM7000::enableGPRS(
@@ -270,6 +273,10 @@ bool AsyncModem::SIM7000::sendSMS(
             }
         }
     );
+}
+
+bool AsyncModem::SIM7000::enableAutoRefresh(bool enabled) {
+    autoRefresh = enabled;
 }
 
 AsyncModem::SIM7000::NETWORK_STATUS AsyncModem::SIM7000::getNetworkStatusForInt(uint8_t value) {

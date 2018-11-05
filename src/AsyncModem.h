@@ -7,6 +7,8 @@
 #undef max
 #include <AsyncDuplex.h>
 
+#define AUTOREFRESH_INTERVAL 10000
+
 #define ASYNC_MODEM_COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
 namespace AsyncModem {
@@ -28,9 +30,11 @@ namespace AsyncModem {
                 Stream* stream,
                 Stream* errorStream=&Serial,
                 uint8_t ATAttempts=10,
+                bool _autoRefresh = true,
                 std::function<void(MatchState)> success=NULL,
                 std::function<void(Command*)> failure=NULL
             );
+            void loop();
 
             bool enableGPRS(
                 char* apn,
@@ -52,11 +56,15 @@ namespace AsyncModem {
                 std::function<void(Command*)> failure=NULL
             );
 
+            bool enableAutoRefresh(bool enabled=true);
             NETWORK_STATUS getNetworkStatus();
 
             bool modemIsInitialized();
             bool gprsIsEnabled();
         protected:
+            bool autoRefresh = false;
+            uint32_t nextAutoRefresh = 0;
+
             bool modemInitialized = false;
             bool gprsEnabled = false;
 
