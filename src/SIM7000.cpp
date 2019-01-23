@@ -16,7 +16,7 @@ bool AsyncModem::SIM7000::begin(
     std::function<void(MatchState)> success,
     std::function<void(Command*)> failure
 ) {
-    AsyncDuplex::begin(_stream, _errorStream);
+    ManagedSerialDevice::begin(_stream, _errorStream);
     autoRefresh = _autoRefresh;
     nextAutoRefresh = millis() + AUTOREFRESH_INTERVAL;
 
@@ -104,7 +104,7 @@ bool AsyncModem::SIM7000::begin(
 }
 
 void AsyncModem::SIM7000::loop() {
-    AsyncDuplex::loop();
+    ManagedSerialDevice::loop();
     if(autoRefresh && millis() > nextAutoRefresh) {
         nextAutoRefresh = millis() + AUTOREFRESH_INTERVAL;
 
@@ -250,7 +250,7 @@ bool AsyncModem::SIM7000::sendSMS(
             execute(
                 atCmgs,
                 ">",
-                AsyncDuplex::Timing::NEXT,
+                ManagedSerialDevice::Timing::NEXT,
                 [this,success,message](MatchState ms) {
                     for (uint16_t i = 0; i < message.length(); i++) {
                         AsyncModem::SIM7000::write(message.c_str()[i]);

@@ -49,7 +49,7 @@ lte.sendSMS(
     [](MatchState ms) {
         Serial.println("Sent :-)");
     },
-    [](AsyncDuplex::Command* cmd) {
+    [](ManagedSerialDevice::Command* cmd) {
         Serial.println("Failed to send :-(");
     },
 );
@@ -74,7 +74,7 @@ a few more optional parameters:
   once the output matches your expectation regex.  Note that the passed-in `MatchState`
   instance can be used for extracting data from capture groups that you might have
   defined in your expectation regex.
-* Failure (`std::function<void(AsyncDuplex::Command*)`; default: `NULL`): A function to execute
+* Failure (`std::function<void(ManagedSerialDevice::Command*)`; default: `NULL`): A function to execute
   if the output doesn't match your expectation regex in time (see "Timeout").  A
   pointer to the failed command is given to you so you can easily handle retry logic.
 * Timeout (ms) (`uint16_t`; default: `2500`): Allow up to this many milliseconds
@@ -130,6 +130,6 @@ see the documentation for [Arduino Async Duplex](https://github.com/coddingtonbe
   cores, but should you be attempting to use this on an AVR microcontroller (e.g. an
   atmega328p), you may find what you need in this repository:
   https://github.com/SGSSGene/StandardCplusplus
-* arduino-async-duplex: This is built atop this duplex stream management library; you
-  can find that library here: https://github.com/coddingtonbear/arduino-async-duplex
+* arduino-managed-serial-device: This is built atop this serial device management library;
+  you can find that library here: https://github.com/coddingtonbear/arduino-managed-serial-device
 * Regexp (https://github.com/nickgammon/Regexp)

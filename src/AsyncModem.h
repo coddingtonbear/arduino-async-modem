@@ -5,14 +5,14 @@
 #include <Arduino.h>
 #undef min
 #undef max
-#include <AsyncDuplex.h>
+#include <ManagedSerialDevice.h>
 
 #define AUTOREFRESH_INTERVAL 10000
 
 #define ASYNC_MODEM_COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
 namespace AsyncModem {
-    class SIM7000: public AsyncDuplex {
+    class SIM7000: public ManagedSerialDevice {
         public: 
             enum NETWORK_STATUS {
                 NOT_YET_READY,
